@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kiran Bazaar</title>
+<script src="{{ url_for('static', filename='chart.umd.min.js') }}"></script>
+<style>
+  :root { --ink:#1d2330; --muted:#5d6678; --line:#dfe3ea; --bg:#f6f7f9; --card:#fff; --accent:#2b5797; --hot:#c0392b; --ok:#2b8a3e; }
+  * { box-sizing: border-box; }
+  body { margin:0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--ink); background:var(--bg); }
+  header { background:var(--accent); color:#fff; padding:18px 24px; }
+  header h1 { margin:0; font-size:22px; } header p { margin:4px 0 0; opacity:.85; font-size:14px; }
+  main { display:grid; grid-template-columns: 320px 1fr; gap:20px; padding:20px 24px; max-width:1200px; margin:auto; }
+  @media (max-width: 800px) { main { grid-template-columns: 1fr; padding:16px; } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px; }
+  label { display:block; font-weight:600; font-size:13px; margin:12px 0 4px; }
+  select, input { width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:6px; font:inherit; background:#fff; }
+  input.bad { border-color:var(--hot); }
+  .hint { color:var(--muted); font-size:12px; margin-top:2px; }
+  button { margin-top:16px; width:100%; padding:10px; border:0; border-radius:6px; background:var(--accent); color:#fff; font-weight:600; font-size:15px; cursor:pointer; }
+  button:disabled { opacity:.6; cursor:wait; }
+  .err { display:none; margin-top:12px; padding:10px 12px; border-radius:6px; background:#fdecea; color:#8a1f11; border:1px solid #f5c2bc; font-size:14px; }
+  .headline { font-size:20px; font-weight:700; margin:0 0 12px; }
+  .stats { display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; }
+  @media (max-width: 800px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  .stat { border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
+  .stat .k { color:var(--muted); font-size:12px; } .stat .v { font-size:20px; font-weight:700; margin-top:2px; }
+  .bar { height:10px; background:#e9ecf1; border-radius:5px; overflow:hidden; margin:14px 0 4px; }
+  .bar > div { height:100%; background:linear-gradient(90deg, #f1c40f, #e67e22, #c0392b); }
+  .charts { display:grid; grid-template-columns: 3fr 2fr; gap:16px; margin-top:16px; }
+  @media (max-width: 900px) { .charts { grid-template-columns: 1fr; } }
+  h3 { font-size:14px; margin:0 0 8px; }
+  #result { display:none; } .placeholder { color:var(--muted); }
+  .badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:12px; font-weight:700; color:#fff; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🛒 Kiran Bazaar</h1>
+  <p>Will a staple's price in your city jump by more than {{ threshold }}% next month? Model: {{ meta.classifier }} · data up to {{ meta.data_last_month[:7] }}</p>
+</header>
+<main>
+  <form class="card" id="form" novalidate>
+    <label for="market">City</label>
+    <select id="market" required>{% for m in opts.markets %}<option {% if m == 'Lahore' %}selected{% endif %}>{{ m }}</option>{% endfor %}</select>
+    <label for="commodity">Commodity</label>
+    <select id="commodity" required>{% for c in opts.commodities %}<option value="{{ c }}">{{ names.get(c, c) }}</option>{% endfor %}</select>
+    <label for="month">Data as of month</label>
+    <select id="month"></select>
+    <div class="hint">Forecast is for the month after this one.</div>
+    <label style="margin-top:18px">What-if overrides (optional)</label>
+    {% for key, spec in overridable.items() %}
+      <label for="{{ key }}" style="font-weight:400">{{ spec[0] }}</label>
+      <input id="{{ key }}" data-key="{{ key }}" class="ovr" inputmode="decimal" placeholder="{{ '%g'|format(spec[1]) }} … {{ '%g'|format(spec[2]) }}" data-min="{{ spec[1] }}" data-max="{{ spec[2] }}">
+    {% endfor %}
+    <button id="go" type="submit">Predict</button>
+    <div class="err" id="err"></div>
+  </form>
+
+  <section>
+    <div class="card placeholder" id="empty">Pick a city and a commodity, then press <b>Predict</b>.</div>
+    <div class="card" id="result">
+      <p class="headline" id="headline"></p>
+      <div class="stats">
+        <div class="stat"><div class="k">Spike probability</div><div class="v" id="s-prob"></div></div>
+        <div class="stat"><div class="k">Verdict</div><div class="v" id="s-verdict" style="font-size:16px"></div></div>
+        <div class="stat"><div class="k" id="s-now-k">Current price</div><div class="v" id="s-now"></div></div>
+        <div class="stat"><div class="k">Expected next month</div><div class="v" id="s-next"></div></div>
+      </div>
+      <div class="bar"><div id="bar"></div></div>
+      <div class="hint" id="thr"></div>
+      <div class="charts">
+        <div><h3>Price history and model spike probability (last 3 years)</h3><canvas id="hist" height="230"></canvas></div>
+        <div><h3>Why this prediction?</h3><canvas id="expl" height="230"></canvas>
+          <div class="hint">Change in probability if that input were at its typical (median) value. Red raises the risk, green lowers it.</div></div>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+let histChart, explChart;
+const RISK = {HIGH:"#c0392b", ELEVATED:"#e67e22", MODERATE:"#d4ac0d", LOW:"#2b8a3e"};
+
+async function loadMonths() {
+  const r = await fetch(`/api/months?market=${encodeURIComponent($("market").value)}&commodity=${encodeURIComponent($("commodity").value)}`);
+  const j = await r.json();
+  $("month").innerHTML = (j.months || []).map(m => `<option>${m}</option>`).join("");
+}
+function showError(msg) { $("err").textContent = "⚠️ " + msg; $("err").style.display = "block"; }
+
+$("market").onchange = loadMonths; $("commodity").onchange = loadMonths;
+
+$("form").onsubmit = async (ev) => {
+  ev.preventDefault(); $("err").style.display = "none";
+  const overrides = {}; let bad = false;
+  document.querySelectorAll(".ovr").forEach(inp => {
+    inp.classList.remove("bad"); const v = inp.value.trim(); if (!v) return;
+    const x = Number(v), lo = Number(inp.dataset.min), hi = Number(inp.dataset.max);
+    if (!Number.isFinite(x) || x < lo || x > hi) { inp.classList.add("bad"); bad = true;
+      showError(`${inp.previousElementSibling.textContent} must be a number between ${lo} and ${hi}.`); }
+    else overrides[inp.dataset.key] = x;
+  });
+  if (bad) return;
+  $("go").disabled = true; $("go").textContent = "Predicting…";
+  try {
+    const r = await fetch("/predict", {method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({market: $("market").value, commodity: $("commodity").value, month: $("month").value, overrides})});
+    const j = await r.json();
+    if (!j.ok) { showError(j.error); return; }
+    render(j);
+  } catch (e) { showError("Could not reach the server. Is the Flask app running?"); }
+  finally { $("go").disabled = false; $("go").textContent = "Predict"; }
+};
+
+function render(j) {
+  const p = j.prediction, name = $("commodity").selectedOptions[0].text;
+  const target = new Date(p.target_month + "-01").toLocaleString("en", {month: "long", year: "numeric"});
+  $("empty").style.display = "none"; $("result").style.display = "block";
+  $("headline").innerHTML = `<span class="badge" style="background:${RISK[p.risk]}">${p.risk}</span> ${name} in ${p.market}: <b>${Math.round(p.probability*100)}% chance</b> of a price jump in ${target}`;
+  $("s-prob").textContent = Math.round(p.probability * 100) + "%";
+  $("s-verdict").textContent = p.spike ? "SPIKE LIKELY" : "no spike expected";
+  $("s-verdict").style.color = p.spike ? "var(--hot)" : "var(--ok)";
+  $("s-now-k").textContent = `Price in ${p.as_of}`;
+  $("s-now").textContent = `Rs ${p.current_price.toFixed(1)} / ${p.unit}`;
+  $("s-next").textContent = `Rs ${p.expected_price.toFixed(1)} (${p.expected_change >= 0 ? "+" : ""}${(p.expected_change*100).toFixed(1)}%)`;
+  $("bar").style.width = Math.min(100, p.probability * 100) + "%";
+  $("thr").textContent = `Alert threshold: ${(p.decision_threshold*100).toFixed(0)}% (tuned on validation data for best F1).`;
+
+  histChart && histChart.destroy();
+  histChart = new Chart($("hist"), {type: "line", data: {labels: j.history.dates, datasets: [
+      {label: "Price (Rs)", data: j.history.price, borderColor: "#2b5797", yAxisID: "y", pointRadius: 0, tension: .2},
+      {label: "P(spike next month)", data: j.history.probability, borderColor: "#e8743b", backgroundColor: "rgba(232,116,59,.18)", fill: true, yAxisID: "y1", pointRadius: 0}]},
+    options: {interaction: {mode: "index", intersect: false}, scales: {y: {title: {display: true, text: "Rs"}},
+      y1: {position: "right", min: 0, max: 1, grid: {drawOnChartArea: false}, ticks: {callback: v => Math.round(v*100) + "%"}}}}});
+  explChart && explChart.destroy();
+  explChart = new Chart($("expl"), {type: "bar", data: {labels: j.explanation.map(e => e.feature), datasets: [{
+      data: j.explanation.map(e => e.effect * 100), backgroundColor: j.explanation.map(e => e.effect > 0 ? "#c0392b" : "#2b8a3e")}]},
+    options: {indexAxis: "y", plugins: {legend: {display: false}}, scales: {x: {ticks: {callback: v => (v > 0 ? "+" : "") + v + "%"}}}}});
+}
+loadMonths();
+</script>
+</body>
+</html>

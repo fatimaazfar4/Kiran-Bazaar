@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+.streamlit/secrets.toml
+deploy/hf_model/
+deploy/hf_space/

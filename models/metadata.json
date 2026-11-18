@@ -1,0 +1,131 @@
+{
+  "project": "Kiran Bazaar - next-month food price spike prediction (Pakistan)",
+  "trained_at": "2026-11-18T14:03:39",
+  "spike_threshold": 0.05,
+  "classifier": "Bagging (Decision Trees)",
+  "classifier_params": {
+    "model__max_features": "0.5",
+    "model__max_samples": "0.3"
+  },
+  "decision_threshold": 0.26646567100319546,
+  "regressor": "Gradient Boosting Regressor",
+  "features": [
+    "market",
+    "commodity",
+    "category",
+    "province",
+    "month",
+    "latitude",
+    "longitude",
+    "ret_1",
+    "ret_2",
+    "ret_3",
+    "ret_6",
+    "ret_12",
+    "vol_6",
+    "ma_ratio_3",
+    "ma_ratio_12",
+    "max12_ratio",
+    "spikes_12",
+    "nat_gap",
+    "nat_ret_1",
+    "basket_ret_1",
+    "diesel_ret_1",
+    "diesel_ret_3",
+    "petrol_ret_1",
+    "wage_ret_3",
+    "fx_ret_1",
+    "fx_ret_3"
+  ],
+  "categorical_features": [
+    "market",
+    "commodity",
+    "category",
+    "province"
+  ],
+  "numeric_features": [
+    "month",
+    "latitude",
+    "longitude",
+    "ret_1",
+    "ret_2",
+    "ret_3",
+    "ret_6",
+    "ret_12",
+    "vol_6",
+    "ma_ratio_3",
+    "ma_ratio_12",
+    "max12_ratio",
+    "spikes_12",
+    "nat_gap",
+    "nat_ret_1",
+    "basket_ret_1",
+    "diesel_ret_1",
+    "diesel_ret_3",
+    "petrol_ret_1",
+    "wage_ret_3",
+    "fx_ret_1",
+    "fx_ret_3"
+  ],
+  "split": {
+    "train": {
+      "rows": 6646,
+      "start": "2014-01-15",
+      "end": "2022-11-15",
+      "spike_rate": 0.1494
+    },
+    "validation": {
+      "rows": 1427,
+      "start": "2022-12-15",
+      "end": "2024-09-15",
+      "spike_rate": 0.1927
+    },
+    "test": {
+      "rows": 1495,
+      "start": "2024-10-15",
+      "end": "2026-08-15",
+      "spike_rate": 0.1258
+    }
+  },
+  "test_metrics_classifier": {
+    "roc_auc": 0.8178,
+    "pr_auc": 0.3945,
+    "f1": 0.4867,
+    "precision": 0.4167,
+    "recall": 0.5851
+  },
+  "test_confusion_matrix": [
+    [
+      1153,
+      154
+    ],
+    [
+      78,
+      110
+    ]
+  ],
+  "test_metrics_regressor": {
+    "mae": 0.0349,
+    "rmse": 0.0643,
+    "r2": 0.053
+  },
+  "top_features": {
+    "nat_ret_1": 0.0386,
+    "ret_1": 0.0226,
+    "spikes_12": 0.0113,
+    "category": 0.0111,
+    "ret_3": 0.0075,
+    "max12_ratio": 0.0069,
+    "commodity": 0.0035,
+    "vol_6": 0.0035,
+    "ma_ratio_12": 0.0033,
+    "ret_6": 0.0012
+  },
+  "data_last_month": "2026-09-15",
+  "versions": {
+    "python": "3.13.18",
+    "sklearn": "1.9.1",
+    "pandas": "3.0.5",
+    "numpy": "2.5.3"
+  }
+}
