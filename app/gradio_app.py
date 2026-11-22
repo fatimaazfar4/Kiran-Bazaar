@@ -51,7 +51,8 @@ def run(market, commodity, month, ret_1, diesel, fx):
     ax[1].barh(e.label[::-1], e.effect[::-1] * 100, color=["#c0392b" if v > 0 else "#2b8a3e" for v in e.effect[::-1]])
     ax[1].set_xlabel("percentage-point change vs typical value"); ax[1].set_title("Why this prediction?")
     fig.tight_layout()
-    return {"spike": p.probability, "no spike": 1 - p.probability}, md, fig
+    verdict = "SPIKE LIKELY" if p.spike else "No spike expected"
+    return {f"P(spike) - {verdict}": p.probability}, md, fig
 
 
 with gr.Blocks(title="Kiran Bazaar") as demo:
@@ -70,7 +71,7 @@ with gr.Blocks(title="Kiran Bazaar") as demo:
             fx = gr.Textbox(label=I.OVERRIDABLE["fx_ret_1"][0], placeholder="-30 … 50  (blank = recorded value)")
             btn = gr.Button("Predict", variant="primary")
         with gr.Column(scale=2):
-            label = gr.Label(label="Probability", num_top_classes=2)
+            label = gr.Label(label="Spike probability", num_top_classes=1)
             text = gr.Markdown()
             plot = gr.Plot()
     market.change(months_for, [market, commodity], month)

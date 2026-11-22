@@ -16,6 +16,13 @@ byc = pd.read_csv(R / "test_by_commodity.csv")
 m, cm, s = meta["test_metrics_classifier"], meta["test_confusion_matrix"], meta["split"]
 tn, fp, fn, tp = cm[0][0], cm[0][1], cm[1][0], cm[1][1]
 acc = (tn + tp) / (tn + fp + fn + tp)
+cal = meta["calibration"]
+_feat = pd.read_csv(ROOT / "data" / "processed" / "features.csv", parse_dates=["date"])
+_lab = _feat[_feat["spike_next"].notna() & (_feat["date"] >= "2014-01-01")]
+len_lab = len(_lab)
+last_lab = _lab["date"].max().strftime("%b %Y")
+last_month = pd.Timestamp(meta["data_last_month"]).strftime("%b %Y")
+len_raw = len(pd.read_csv(ROOT / "data" / "raw" / "wfp_food_prices_pak.csv"))
 
 
 def img(p, w="100%"):
@@ -29,15 +36,15 @@ role = {
     "Naive Bayes": "Probability model assuming features are independent",
     "SVM (RBF)": "Finds a curved boundary with maximum margin",
     "Decision Tree": "One tree of if/else questions (depth 5)",
-    "Random Forest": "Many trees, each on random rows and features",
-    "Bagging (Decision Trees)": "100 trees on random 30% samples; votes averaged",
+    "Random Forest": "300 trees on random rows; random features at every split",
+    "Bagging (Decision Trees)": "100 trees, each on a random 60% sample; votes averaged",
     "Gradient Boosting": "Trees built one after another, each fixing the last one's errors",
     "Baseline: class prior": "Always predicts the average spike rate (no skill)",
     "Baseline: persistence rule": "\"It jumped last month, so it will jump again\"",
 }
 rows = ""
 for r in val.itertuples():
-    sel = r.model.startswith("Bagging")
+    sel = r.model == meta["classifier"]
     rows += (f"<tr{' class=sel' if sel else ''}><td>{r.model}{' ✅ <b>chosen</b>' if sel else ''}</td><td class=l>{role.get(r.model, '')}</td>"
              f"<td>{r.val_roc_auc:.3f}</td><td>{r.val_f1:.3f}</td><td>{r.train_roc_auc:.3f}</td></tr>")
 reg_rows = "".join(
@@ -71,7 +78,7 @@ td:first-child, td.l {{ text-align:left }} tr.sel td {{ background:#fff6d6; font
 
 <div class="box"><b>In one sentence:</b> given a <b>city</b> (Karachi, Lahore, Multan, Peshawar, Quetta) and a <b>food staple</b>
 (atta, rice, sugar, oil, ghee, milk, eggs, chicken, daals), the system predicts the <b>probability that its price will rise by more than 5 % next month</b>,
-e.g. <i>"Wheat flour (atta) in Lahore: 16 % chance of a &gt;5 % jump in October 2026"</i>.</div>
+e.g. <i>"Wheat flour (atta) in Lahore: 23 % chance of a &gt;5 % jump in November 2026"</i>.</div>
 
 <h2>1. What problem are we solving? Classification or regression?</h2>
 <p><b>Main task = binary CLASSIFICATION.</b> For every city + staple + month, the answer is <b>Yes (spike)</b> or <b>No (no spike)</b>:</p>
@@ -86,7 +93,7 @@ It also differs from the published work on this dataset, which used regression.<
 <table><tr><th>Dataset</th><th>Publisher / source</th><th>What it contains</th><th>Licence</th></tr>
 <tr><td class=l><b>WFP Food Prices for Pakistan</b> (<code>wfp_food_prices_pak.csv</code>)</td><td class=l>World Food Programme on the <b>Humanitarian Data Exchange (HDX)</b>,
 data.humdata.org. Original sources: Pakistan Bureau of Statistics and FAO GIEWS/FPMA</td>
-<td class=l>14,345 rows, 16 columns: monthly <b>retail prices in PKR</b> for 18 items in 5 cities, Jan 2004 to Sep 2026</td><td>CC BY-IGO (free with citation)</td></tr>
+<td class=l>{len_raw:,} rows, 16 columns: monthly <b>retail prices in PKR</b> for 18 items in 5 cities, Jan 2004 to {last_month}</td><td>CC BY-IGO (free with citation)</td></tr>
 <tr><td class=l><b>WFP Markets for Pakistan</b> (<code>wfp_markets_pak.csv</code>)</td><td class=l>Same HDX dataset</td>
 <td class=l>Market list: city → province, district, latitude, longitude</td><td>CC BY-IGO</td></tr></table>
 <p><b>How the sources are combined</b> (the guideline asks for at least two sources):</p>
@@ -98,8 +105,8 @@ data.humdata.org. Original sources: Pakistan Bureau of Statistics and FAO GIEWS/
 
 <h2>3. How the raw data becomes a training table</h2>
 <ul><li>Each <b>row</b> = one city × one staple × one month, e.g. "Lahore, Sugar, March 2023".</li>
-<li><b>Time window used: Jan 2014 to Aug 2026</b> (before 2014 only rice and wheat were recorded, and fuel/wage data did not exist).
-Result: <b>9,568 labelled rows</b>; ~15 % of them are spikes.</li>
+<li><b>Time window used: Jan 2014 to {last_lab}</b> (before 2014 only rice and wheat were recorded, and fuel/wage data did not exist).
+Result: <b>{len_lab:,} labelled rows</b>; ~15 % of them are spikes. The newest month ({last_month}) has no answer yet; it is the month the app forecasts from.</li>
 <li><b>26 input features</b>, all computed using <b>only the current and past months</b> (never the future), plus 5 more created inside the pipeline:</li></ul>
 <table><tr><th>Group</th><th>Features (plain words)</th></tr>
 <tr><td>Price momentum</td><td class=l>% change over the last 1, 2, 3, 6 and 12 months; price vs its 3- and 12-month average; price vs its 12-month high</td></tr>
@@ -114,15 +121,24 @@ Result: <b>9,568 labelled rows</b>; ~15 % of them are spikes.</li>
 <li><b>Time-ordered split (70/15/15):</b> train = {s['train']['start'][:7]} to {s['train']['end'][:7]} ({s['train']['rows']:,} rows) · validation = {s['validation']['start'][:7]} to {s['validation']['end'][:7]} ({s['validation']['rows']:,}) ·
 test = {s['test']['start'][:7]} to {s['test']['end'][:7]} ({s['test']['rows']:,}). We never train on the future and test on the past.</li>
 <li><b>Tuning:</b> GridSearchCV / RandomizedSearchCV with <b>5-fold time-series cross-validation</b>, optimising ROC-AUC.</li>
-<li><b>Model selection on validation</b> → best model picked; alert threshold tuned for best F1 → retrained on train+validation → <b>tested once</b> on the test set.</li>
+<li><b>Model selection on validation</b> → best model picked → <b>probability calibration</b> → alert threshold tuned for best F1 → retrained on train+validation → <b>tested once</b> on the test set.</li>
 <li><b>Saved</b> with joblib in <code>models/</code>; versions pinned in <code>requirements.txt</code>.</li></ol>
 
 <h2 class="pb">5. Which models did we use?</h2>
 <p>We trained <b>2 baselines + 9 course algorithms</b> for the classification task and compared them on the <b>validation set</b>.
 Higher ROC-AUC = better at ranking risky months above safe ones (0.5 = random guessing, 1.0 = perfect).</p>
 <table><tr><th>Model</th><th>What it does</th><th>Val ROC-AUC</th><th>Val F1</th><th>Train ROC-AUC</th></tr>{rows}</table>
-<div class="box"><b>Final deployed model = Bagging Classifier</b>: 100 decision trees, each trained on a random 30 % of rows and 50 % of features; their votes are averaged.
-It had the <b>best validation ROC-AUC (0.755) and PR-AUC</b>. Averaging many trees reduces the over-fitting a single tree suffers from.</div>
+<div class="box"><b>Final deployed model = Random Forest</b> (300 decision trees, max depth 16, at least 25 rows per leaf, √features tried at each split), <b>plus probability calibration</b>.
+It had the best validation ROC-AUC (0.751), essentially tied with Bagging (0.750). Both are ensembles of decision trees; we followed our fixed rule "highest validation ROC-AUC wins".
+Averaging many trees reduces the over-fitting a single tree suffers from.</div>
+<h3>Why calibration?</h3>
+<p>The forest uses <code>class_weight="balanced_subsample"</code> so that it pays attention to the rare spikes. Side effect: its probabilities came out <b>too high</b>.
+On validation it predicted a {cal['val_mean_prob_raw']:.0%} average spike chance when the real rate was {cal['val_actual_spike_rate']:.0%}, so the app would have said
+"59 % chance" for atta when the truth is nearer 20 %. We wrapped the model in <b>CalibratedClassifierCV (sigmoid / Platt scaling)</b>, which learns a mapping from raw scores
+to real-world frequencies. On validation the average prediction became {cal['val_mean_prob_calibrated']:.0%}, and the Brier score (probability error, lower is better) fell from
+{cal['val_brier_raw']:.3f} to {cal['val_brier_calibrated']:.3f}.</p>
+<div class="row"><div style="flex:1">{img("reports/figures/16_calibration_validation.png", "90%")}</div><div style="flex:1.3"><p>How to read it: if the model says "30 %", then about 30 % of
+those months should really spike, so a perfect model sits on the dashed diagonal. The red line (before) lies far below it: the model was over-confident. The blue line (after) follows it closely.</p></div></div>
 <h3>Regression side-model (expected % change): validation results</h3>
 <table><tr><th>Model</th><th>Val MAE (percentage points, lower is better)</th><th>Val R²</th></tr>{reg_rows}</table>
 <p>The <b>Gradient Boosting Regressor</b> is deployed for the "expected price" number. Plain <b>Linear Regression was worse than just predicting the average</b>,
@@ -132,7 +148,7 @@ because price changes are not linear in these features.</p>
 <li><b>K-Means (k = 4)</b>: groups the 65 city-item series into volatile perishables (chicken, eggs), rupee-sensitive items (daals, rice, wheat), rare-jump items (ghee, oil) and stable items (milk, sugar).</li>
 <li><b>Apriori</b>: finds items that spike together. <b>Ghee ↔ cooking oil</b> (lift ≈ 7, both use imported palm oil), the three daals, and <b>wheat ↔ atta</b>.</li></ul>
 
-<h2>6. How accurate is it? (held-out test set, Oct 2024 to Aug 2026)</h2>
+<h2>6. How accurate is it? (held-out test set, {s['test']['start'][:7]} to {s['test']['end'][:7]})</h2>
 <div class="big"><div><b>{acc:.0%}</b><span>Accuracy</span></div><div><b>{m['roc_auc']:.2f}</b><span>ROC-AUC</span></div><div><b>{m['f1']:.2f}</b><span>F1 (spike class)</span></div>
 <div><b>{m['recall']:.0%}</b><span>Recall: real spikes caught</span></div><div><b>{m['precision']:.0%}</b><span>Precision: alerts that were right</span></div></div>
 <table><tr><th>Model (test set)</th><th>ROC-AUC</th><th>PR-AUC</th><th>F1</th><th>Precision</th><th>Recall</th></tr>
@@ -144,17 +160,17 @@ because price changes are not linear in these features.</p>
 <div class="warn"><b>Why we don't lead with accuracy:</b> only ~13 % of test months are spikes, so a useless model that <i>always</i> says "no spike"
 would score ~87 % accuracy. That's why the guideline asks for <b>F1 / ROC-AUC / confusion matrix</b>, and why we report those.</div></div></div>
 <p><b>Is it good enough?</b> Yes for the project. The guidelines mark the <i>quality of the lifecycle</i>, not a minimum score. The model clearly beats both baselines
-(ROC-AUC 0.82 vs 0.62; F1 0.49 vs 0.33). Food prices one month ahead are partly random, so 0.82 is a solid result. We set the alert threshold to
+(ROC-AUC {m['roc_auc']:.2f} vs {test.iloc[1].roc_auc:.2f}; F1 {m['f1']:.2f} vs {test.iloc[1].f1:.2f}). Food prices one month ahead are partly random, so {m['roc_auc']:.2f} is a solid result. We set the alert threshold to
 {meta['decision_threshold']:.0%} (not 50 %) on purpose: for an early-warning tool it is better to catch most spikes and accept some false alarms.</p>
 <p><b>Regression on test:</b> MAE {reg_test.iloc[0].mae * 100:.2f} percentage points vs {reg_test.iloc[2].mae * 100:.2f} for "no change", R² {reg_test.iloc[0].r2:.2f}. That is only a small improvement,
 which confirms that classification was the right main framing.</p>
 
 <h2 class="pb">7. Over-fitting / under-fitting</h2>
 <div class="row"><div>{img("reports/figures/12_train_vs_val_auc.png")}<div class="cap">Train vs validation ROC-AUC</div></div>
-<div><ul><li><b>Over-fitting:</b> KNN (train 1.00 → val 0.69) memorises the training data; Gradient Boosting (0.96 → 0.73) also over-fits.</li>
+<div><ul><li><b>Over-fitting:</b> KNN (train 1.00 → val 0.70) memorises the training data; Gradient Boosting (0.96 → 0.74) also over-fits.</li>
 <li><b>Under-fitting:</b> Logistic Regression and Naive Bayes have small gaps but low scores; they are too simple for the non-linear pattern.</li>
-<li><b>Bagging (0.89 → 0.76)</b> is the best balance.</li>
-<li>Validation (Dec 2022 to Sep 2024) is harder than training because of the <b>2022-24 inflation shock</b>: spike rate 19 % vs 15 %.</li></ul></div></div>
+<li><b>Random Forest and Bagging (both 0.93 → 0.75)</b> give the best validation scores. They still over-fit somewhat, which <code>min_samples_leaf=25</code> and <code>max_depth=16</code> limit.</li>
+<li>Validation ({s['validation']['start'][:7]} to {s['validation']['end'][:7]}) has more spikes than training (18 % vs 15 %, the tail of the 2022-24 inflation shock), which makes it harder.</li></ul></div></div>
 
 <h2>8. What drives the predictions? Where does it fail?</h2>
 <div class="row"><div>{img("reports/figures/13_permutation_importance.png")}<div class="cap">Most important features (drop in test ROC-AUC when shuffled)</div></div>
@@ -164,9 +180,9 @@ Fuel and exchange-rate features did <b>not</b> help in 2024-26 because the rupee
 
 <h2>9. Limitations (be ready to say these yourselves)</h2>
 <ol><li><b>Only 5 big cities</b> and monthly data. Small towns and weekly movements are not covered.</li>
-<li><b>Uneven skill across items:</b> good for chicken, moong daal, cooking oil and milk; close to random for rice, mash daal and eggs. Part of the overall 0.82 comes from simply telling volatile items from stable ones.</li>
+<li><b>Uneven skill across items:</b> good for moong daal, cooking oil, sugar, milk and wheat; close to random for eggs, basmati rice and mash daal (masoor daal's high score rests on a single test spike). Part of the overall {m['roc_auc']:.2f} comes from simply telling volatile items from stable ones.</li>
 <li><b>No shock information:</b> floods, government wheat support-price announcements, import bans, bird flu and Ramadan/Eid timing are not in the features.</li>
-<li><b>Regime shifts:</b> the spike rate changes over time (15 % → 19 % → 13 %), so probabilities can drift; the model should be retrained regularly.</li>
+<li><b>Regime shifts:</b> the spike rate changes over time (15 % train → 18 % validation → 13 % test), so even calibrated probabilities can drift; the model should be retrained (and re-calibrated) regularly.</li>
 <li><b>Fuel / exchange-rate features</b> were untested in a devaluation period inside the test window.</li>
 <li><b>Regression is weak</b> (R² ≈ 0.05): the "expected price" is a rough guide only.</li>
 <li><b>Data is secondary</b> (collected by PBS/WFP), so we inherit any recording errors and gaps (40-50 % of months are missing for items that start in 2013-15).</li></ol>
@@ -196,10 +212,11 @@ Users can also try <b>what-if</b> values for this month's price change, diesel c
 <p><b>Q: Why 5 %?</b><br>It marks a real jump that hurts households, yet happens often enough to learn from (~15 % of months). At 10 % only ~4 % of months would be positive.</p>
 <p><b>Q: Why not a random train/test split?</b><br>Neighbouring months are almost identical, so a random split leaks future information into training. We split by time and use TimeSeriesSplit for cross-validation.</p>
 <p><b>Q: How did you avoid data leakage?</b><br>(1) Features use only current and past months. (2) All pre-processing sits inside the Pipeline, fitted on training data only. (3) Time-ordered split. (4) The test set was used exactly once.</p>
-<p><b>Q: Why is accuracy 84 % but you say F1 0.49?</b><br>The classes are imbalanced (≈13 % spikes in test), so accuracy is misleading. F1 and ROC-AUC measure performance on the rare spike class.</p>
-<p><b>Q: Why Bagging and not Random Forest?</b><br>Both are tree ensembles. Bagging had higher validation ROC-AUC (0.755 vs 0.739) and PR-AUC. We selected on validation, not on test.</p>
-<p><b>Q: Why is the threshold 27 % and not 50 %?</b><br>With imbalanced classes the 0.5 default misses most spikes. We chose the threshold that maximised F1 on the validation set.</p>
-<p><b>Q: How did you handle class imbalance?</b><br><code>class_weight="balanced"</code>, tuning on ROC-AUC instead of accuracy, and the F1-optimal threshold.</p>
+<p><b>Q: Why is accuracy {acc:.0%} but you say F1 {m['f1']:.2f}?</b><br>The classes are imbalanced (≈13 % spikes in test), so accuracy is misleading. F1 and ROC-AUC measure performance on the rare spike class.</p>
+<p><b>Q: Why Random Forest and not Bagging?</b><br>They were essentially tied on validation ROC-AUC (0.751 vs 0.750). We fixed the rule "highest validation ROC-AUC wins" in advance and followed it. We selected on validation, not on test. Random Forest also tries a random subset of features at every split, which makes its trees more diverse.</p>
+<p><b>Q: Why did you calibrate the probabilities?</b><br>Class weighting made the raw forest over-confident: average prediction {cal['val_mean_prob_raw']:.0%} vs a real spike rate of {cal['val_actual_spike_rate']:.0%} on validation. Platt scaling (CalibratedClassifierCV) fixed this ({cal['val_mean_prob_calibrated']:.0%}), so "23 % chance" in the app really means about 23 %.</p>
+<p><b>Q: Why is the threshold {meta['decision_threshold']:.0%} and not 50 %?</b><br>With only ~15 % spikes, a calibrated probability rarely reaches 50 %, so a 0.5 cut-off would miss most spikes. We chose the threshold that maximised F1 on the calibrated validation probabilities. A {meta['decision_threshold']:.0%} chance is already well above the normal ~13 % spike rate.</p>
+<p><b>Q: How did you handle class imbalance?</b><br><code>class_weight="balanced"</code>, tuning on ROC-AUC instead of accuracy, the F1-optimal threshold, and calibration so probabilities stay honest.</p>
 <p><b>Q: What was your biggest mistake and how did you fix it?</b><br>The first version used price and exchange-rate <i>levels</i>. These rise for 20 years, so models had to extrapolate (Logistic Regression val ROC-AUC 0.51). Switching to % changes raised it to 0.71.</p>
 <p><b>Q: What are the two data sources?</b><br>WFP food prices (with fuel, wage and implied USD/PKR series) and the WFP markets table, both from HDX under CC BY-IGO.</p>
 <p><b>Q: What do PCA, K-Means and Apriori add?</b><br>PCA shows the signal is spread over ~10 directions; K-Means groups items by price behaviour; Apriori shows which items spike together (ghee and oil, wheat and atta).</p>

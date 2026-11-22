@@ -8,6 +8,7 @@ import json
 import platform
 import sys
 import time
+import warnings
 from pathlib import Path
 
 import joblib
@@ -18,12 +19,17 @@ import numpy as np
 import pandas as pd
 import sklearn
 from sklearn.base import clone
+from sklearn.calibration import CalibratedClassifierCV, calibration_curve
 from sklearn.inspection import permutation_importance
-from sklearn.metrics import (ConfusionMatrixDisplay, average_precision_score, classification_report,
+from sklearn.metrics import (ConfusionMatrixDisplay, average_precision_score, brier_score_loss, classification_report,
                              confusion_matrix, f1_score, mean_absolute_error, precision_recall_curve,
                              precision_score, r2_score, recall_score, roc_auc_score, roc_curve,
                              root_mean_squared_error)
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, TimeSeriesSplit
+
+# Harmless library notices (SVC `probability` deprecation, joblib config propagation) would flood the console.
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -118,17 +124,36 @@ def main():
     cand = table[~table.model.str.startswith("Baseline")].sort_values("val_roc_auc", ascending=False)
     best_name = cand.iloc[0]["model"]
     best_model, best_params = fitted[best_name]
-    threshold, _ = best_f1_threshold(yva, val_probs[best_name])
-    print("selected:", best_name, "threshold:", round(threshold, 3))
+    print("selected:", best_name)
 
-    # ---- refit the chosen configuration on train+validation, evaluate ONCE on test
+    # ---- probability calibration (Platt / sigmoid), decided on VALIDATION data.
+    # class_weight="balanced" inflates predicted probabilities, so "60 % chance" would not mean 60 %.
+    # CalibratedClassifierCV with forward-chaining folds maps scores back to real-world frequencies.
+    def calibrated(est):
+        return CalibratedClassifierCV(clone(est), method="sigmoid", cv=TimeSeriesSplit(n_splits=5))
+
+    cal_tr = calibrated(best_model).fit(Xtr, ytr)
+    p_raw_va, p_cal_va = val_probs[best_name], cal_tr.predict_proba(Xva)[:, 1]
+    calib_info = {
+        "method": "sigmoid (Platt scaling), CalibratedClassifierCV with 5-fold TimeSeriesSplit",
+        "val_brier_raw": round(float(brier_score_loss(yva, p_raw_va)), 4),
+        "val_brier_calibrated": round(float(brier_score_loss(yva, p_cal_va)), 4),
+        "val_mean_prob_raw": round(float(p_raw_va.mean()), 4),
+        "val_mean_prob_calibrated": round(float(p_cal_va.mean()), 4),
+        "val_actual_spike_rate": round(float(yva.mean()), 4),
+    }
+    print("calibration (validation):", calib_info)
+    threshold, _ = best_f1_threshold(yva, p_cal_va)
+    print("decision threshold (F1-optimal on validation, calibrated):", round(threshold, 3))
+
+    # ---- refit the calibrated model on train+validation, evaluate ONCE on test
     trva = pd.concat([tr, va])
-    final = clone(best_model).fit(trva[X], trva[C.TARGET_CLF].astype(int))
+    final = calibrated(best_model).fit(trva[X], trva[C.TARGET_CLF].astype(int))
     pte = final.predict_proba(Xte)[:, 1]
     test_m = clf_metrics(yte, pte, threshold)
     persist_te = (te["ret_1"].fillna(0) > C.SPIKE_THRESHOLD).astype(float).values
     test_table = pd.DataFrame([
-        {"model": f"{best_name} (final)", **clf_metrics(yte, pte, threshold)},
+        {"model": f"{best_name}, calibrated (final)", **clf_metrics(yte, pte, threshold)},
         {"model": "Baseline: persistence rule", **clf_metrics(yte, persist_te, 0.5)},
         {"model": "Baseline: class prior", **clf_metrics(yte, np.full(len(yte), ytr.mean()), 0.5)},
     ])
@@ -164,6 +189,15 @@ def main():
     ConfusionMatrixDisplay(cm, display_labels=["no spike", "spike"]).plot(ax=ax, cmap="Blues", colorbar=False)
     ax.set_title(f"Test confusion matrix\n{best_name}, threshold={threshold:.2f}")
     fig.tight_layout(); fig.savefig(FIG / "11_confusion_matrix_test.png"); plt.close(fig)
+
+    fig, ax = plt.subplots(figsize=(5, 4.5))
+    for lab, p, col in [("before calibration", p_raw_va, "#c0504d"), ("after calibration", p_cal_va, "#2b5797")]:
+        fy, fx = calibration_curve(yva, p, n_bins=10, strategy="quantile")
+        ax.plot(fx, fy, marker="o", color=col, label=f"{lab} (Brier {brier_score_loss(yva, p):.3f})")
+    ax.plot([0, 1], [0, 1], "k--", lw=0.8, label="perfectly calibrated")
+    ax.set(title=f"Calibration on validation: {best_name}", xlabel="predicted probability of spike",
+           ylabel="actual share of spikes", xlim=(0, 1), ylim=(0, 1)); ax.legend(fontsize=8)
+    fig.tight_layout(); fig.savefig(FIG / "16_calibration_validation.png"); plt.close(fig)
 
     t = table[~table.model.str.startswith("Baseline")].sort_values("val_roc_auc")
     fig, ax = plt.subplots(figsize=(8, 4.5))
@@ -234,6 +268,7 @@ def main():
         "trained_at": pd.Timestamp.now().isoformat(timespec="seconds"),
         "spike_threshold": C.SPIKE_THRESHOLD,
         "classifier": best_name, "classifier_params": {k: str(v) for k, v in best_params.items()},
+        "calibration": calib_info,
         "decision_threshold": threshold,
         "regressor": reg_best,
         "features": X, "categorical_features": C.CATEGORICAL_FEATURES, "numeric_features": C.NUMERIC_FEATURES,

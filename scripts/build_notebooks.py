@@ -109,7 +109,7 @@ sns.heatmap(corr, cmap="RdBu_r", center=0, ax=ax, annot=False, square=True)
 ax.set_title("Plot 6 - Spearman correlation of numeric features and targets")
 fig.tight_layout(); fig.savefig(FIG / "06_correlation_heatmap.png")
 corr[C.TARGET_CLF].drop([C.TARGET_CLF, C.TARGET_REG]).sort_values(key=abs, ascending=False).head(10).round(3)""",
-    """md:The return features (`ret_1/2/3`, `ma_ratio_3`) are strongly inter-correlated, which suits regularised Logistic Regression and tree ensembles; Naive Bayes is expected to suffer because it assumes independence. The strongest single correlates of a spike are **recent volatility** (`spikes_12`, `vol_6`, ρ ≈ 0.27) and the **national momentum** of that commodity (`nat_ret_1`). Every correlation is weak to moderate, so a model has to combine many signals.
+    """md:The return features (`ret_1/2/3`, `ma_ratio_3`) are strongly inter-correlated, which suits regularised Logistic Regression and tree ensembles; Naive Bayes is expected to suffer because it assumes independence. The strongest single correlates of a spike are **recent volatility** (`spikes_12`, `vol_6`, ρ ≈ 0.29) and the **national momentum** of that commodity (`nat_ret_1`). Every correlation is weak to moderate, so a model has to combine many signals.
 ## 8. Seasonality""",
     """season = lab.groupby(["month", "commodity"])[C.TARGET_CLF].mean().unstack()[["Poultry", "Eggs", "Wheat flour", "Sugar", "Milk"]]
 fig, ax = plt.subplots(figsize=(10, 4)); season.plot(ax=ax, marker="o")
@@ -155,19 +155,26 @@ cmp.drop(columns="best_params").sort_values("val_roc_auc", ascending=False).roun
     """from IPython.display import Image, display
 display(Image(FIG / "10_roc_pr_validation.png")); display(Image(FIG / "12_train_vs_val_auc.png"))""",
     """md:**Over/under-fitting (read the train vs validation chart).**
-* **KNN** reaches train ROC-AUC 1.00 against 0.69 on validation: distance weighting makes every training point its own nearest neighbour, so it memorises. That is clear over-fitting.
-* **Gradient Boosting** (0.96 → 0.73) also over-fits; CV chose a small learning rate and large leaves, but deep trees still memorise.
-* **Logistic Regression, PCA + LR and Naive Bayes** show small gaps (≈ 0.05-0.09) and low training scores: they are *high-bias* models that under-fit the non-linear signal.
-* **Bagging** sits in between (0.89 → 0.76): averaging trees fitted on 30 % bootstrap samples with 50 % of the features reduces variance. It is selected for the best validation ROC-AUC and PR-AUC.
+* **KNN** reaches train ROC-AUC 1.00 against 0.70 on validation: distance weighting makes every training point its own nearest neighbour, so it memorises. That is clear over-fitting.
+* **Gradient Boosting** (0.96 → 0.74) also over-fits: CV chose unlimited tree depth.
+* **Logistic Regression, PCA + LR and Naive Bayes** show small gaps (≈ 0.04-0.08) and low training scores: they are *high-bias* models that under-fit the non-linear signal.
+* **Random Forest** (0.93 → 0.75) and **Bagging** (0.93 → 0.75) are the two best models and are essentially tied. Both average many trees, which reduces variance. Random Forest also draws a random subset of features at every split, which de-correlates the trees. By our pre-defined rule (highest validation ROC-AUC) **Random Forest is selected** (0.751 vs 0.750). It still over-fits somewhat; `min_samples_leaf=25` and `max_depth=16` limit this.
 
-Validation is also harder than training because of the **2022-24 inflation shock** (spike rate 19 % vs 15 %).
+Validation is also harder than training because of the **2022-24 inflation shock** (spike rate 18 % vs 15 %).
+## Probability calibration
+`class_weight="balanced_subsample"` helps the forest notice the rare spikes, but it **inflates the predicted probabilities**: on validation
+the raw forest predicts a 44 % average spike chance when the real rate is 18 %. An app that says "59 % chance" when the truth is closer to 20 %
+would mislead users. We therefore wrap the selected model in `CalibratedClassifierCV(method="sigmoid")` (Platt scaling) with a 5-fold
+`TimeSeriesSplit`. This is decided and checked on **validation** data, and the F1-optimal decision threshold is chosen on the calibrated validation probabilities.
 ## Final evaluation on the held-out test set (reported once)""",
     """import json
 meta = json.loads((C.MODELS_DIR / "metadata.json").read_text())
 print("final model:", meta["classifier"], "| decision threshold:", round(meta["decision_threshold"], 3))
 display(pd.read_csv(R / "classification_test.csv").round(3))
 print((R / "classification_report_test.txt").read_text())
-display(Image(FIG / "11_confusion_matrix_test.png"))""",
+display(Image(FIG / "11_confusion_matrix_test.png"))
+print("calibration (validation):", meta["calibration"])
+display(Image(FIG / "16_calibration_validation.png"))""",
     """md:## Error analysis""",
     """display(pd.read_csv(R / "test_by_commodity.csv").round(3).sort_values("roc_auc"))
 display(Image(FIG / "14_test_auc_by_commodity.png")); display(Image(FIG / "13_permutation_importance.png"))""",

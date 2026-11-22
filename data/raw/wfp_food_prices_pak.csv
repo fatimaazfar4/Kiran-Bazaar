@@ -14344,3 +14344,88 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2026-09-15,SINDH,Karachi,Karachi,293,24.91,67.08,pulses and nuts,Lentils (gram),1378,KG,actual,Retail,PKR,267,0.96
 2026-09-15,SINDH,Karachi,Karachi,293,24.91,67.08,pulses and nuts,Lentils (masur),61,KG,actual,Retail,PKR,270,0.97
 2026-09-15,SINDH,Karachi,Karachi,293,24.91,67.08,pulses and nuts,Lentils (moong),325,KG,actual,Retail,PKR,355,1.28
+2026-10-15,BALOCHISTAN,Quetta,Quetta,295,30.19,67.01,cereals and tubers,"Rice (basmati, broken)",122,KG,actual,Retail,PKR,282,1.02
+2026-10-15,BALOCHISTAN,Quetta,Quetta,295,30.19,67.01,cereals and tubers,Rice (coarse),60,KG,actual,Retail,PKR,168,0.61
+2026-10-15,BALOCHISTAN,Quetta,Quetta,295,30.19,67.01,cereals and tubers,Wheat,84,KG,actual,Retail,PKR,136,0.49
+2026-10-15,BALOCHISTAN,Quetta,Quetta,295,30.19,67.01,cereals and tubers,Wheat flour,58,KG,actual,Retail,PKR,155,0.56
+2026-10-15,BALOCHISTAN,Quetta,Quetta,295,30.19,67.01,"meat, fish and eggs",Eggs,92,Dozen,actual,Retail,PKR,255,0.92
+2026-10-15,BALOCHISTAN,Quetta,Quetta,295,30.19,67.01,"meat, fish and eggs",Poultry,138,KG,actual,Retail,PKR,435,1.57
+2026-10-15,BALOCHISTAN,Quetta,Quetta,295,30.19,67.01,milk and dairy,Milk,81,L,actual,Retail,PKR,220,0.8
+2026-10-15,BALOCHISTAN,Quetta,Quetta,295,30.19,67.01,miscellaneous food,Sugar,97,KG,actual,Retail,PKR,141,0.51
+2026-10-15,BALOCHISTAN,Quetta,Quetta,295,30.19,67.01,non-food,Fuel (diesel),284,L,actual,Retail,PKR,398,1.44
+2026-10-15,BALOCHISTAN,Quetta,Quetta,295,30.19,67.01,non-food,Fuel (petrol-gasoline),285,L,actual,Retail,PKR,388,1.4
+2026-10-15,BALOCHISTAN,Quetta,Quetta,295,30.19,67.01,non-food,"Wage (non-qualified labour, non-agricultural)",465,Day,actual,Retail,PKR,1449,5.24
+2026-10-15,BALOCHISTAN,Quetta,Quetta,295,30.19,67.01,oil and fats,Ghee (artificial),106,KG,actual,Retail,PKR,632,2.28
+2026-10-15,BALOCHISTAN,Quetta,Quetta,295,30.19,67.01,oil and fats,Oil (cooking),82,L,actual,Retail,PKR,618,2.23
+2026-10-15,BALOCHISTAN,Quetta,Quetta,295,30.19,67.01,pulses and nuts,Beans(mash),326,KG,actual,Retail,PKR,502,1.81
+2026-10-15,BALOCHISTAN,Quetta,Quetta,295,30.19,67.01,pulses and nuts,Lentils (gram),1378,KG,actual,Retail,PKR,324,1.17
+2026-10-15,BALOCHISTAN,Quetta,Quetta,295,30.19,67.01,pulses and nuts,Lentils (masur),61,KG,actual,Retail,PKR,298,1.08
+2026-10-15,BALOCHISTAN,Quetta,Quetta,295,30.19,67.01,pulses and nuts,Lentils (moong),325,KG,actual,Retail,PKR,426,1.54
+2026-10-15,KHYBER PAKHTUNKHWA,Peshawar,Peshawar,294,34.01,71.58,cereals and tubers,"Rice (basmati, broken)",122,KG,actual,Retail,PKR,222,0.8
+2026-10-15,KHYBER PAKHTUNKHWA,Peshawar,Peshawar,294,34.01,71.58,cereals and tubers,Rice (coarse),60,KG,actual,Retail,PKR,133,0.48
+2026-10-15,KHYBER PAKHTUNKHWA,Peshawar,Peshawar,294,34.01,71.58,cereals and tubers,Wheat,84,KG,actual,Retail,PKR,142,0.51
+2026-10-15,KHYBER PAKHTUNKHWA,Peshawar,Peshawar,294,34.01,71.58,cereals and tubers,Wheat flour,58,KG,actual,Retail,PKR,152,0.55
+2026-10-15,KHYBER PAKHTUNKHWA,Peshawar,Peshawar,294,34.01,71.58,"meat, fish and eggs",Eggs,92,Dozen,actual,Retail,PKR,276,1
+2026-10-15,KHYBER PAKHTUNKHWA,Peshawar,Peshawar,294,34.01,71.58,"meat, fish and eggs",Poultry,138,KG,actual,Retail,PKR,406,1.47
+2026-10-15,KHYBER PAKHTUNKHWA,Peshawar,Peshawar,294,34.01,71.58,milk and dairy,Milk,81,L,actual,Retail,PKR,266,0.96
+2026-10-15,KHYBER PAKHTUNKHWA,Peshawar,Peshawar,294,34.01,71.58,miscellaneous food,Sugar,97,KG,actual,Retail,PKR,145,0.52
+2026-10-15,KHYBER PAKHTUNKHWA,Peshawar,Peshawar,294,34.01,71.58,non-food,Fuel (diesel),284,L,actual,Retail,PKR,398,1.44
+2026-10-15,KHYBER PAKHTUNKHWA,Peshawar,Peshawar,294,34.01,71.58,non-food,Fuel (petrol-gasoline),285,L,actual,Retail,PKR,389,1.41
+2026-10-15,KHYBER PAKHTUNKHWA,Peshawar,Peshawar,294,34.01,71.58,non-food,"Wage (non-qualified labour, non-agricultural)",465,Day,actual,Retail,PKR,1500,5.42
+2026-10-15,KHYBER PAKHTUNKHWA,Peshawar,Peshawar,294,34.01,71.58,oil and fats,Ghee (artificial),106,KG,actual,Retail,PKR,632,2.28
+2026-10-15,KHYBER PAKHTUNKHWA,Peshawar,Peshawar,294,34.01,71.58,oil and fats,Oil (cooking),82,L,actual,Retail,PKR,618,2.23
+2026-10-15,KHYBER PAKHTUNKHWA,Peshawar,Peshawar,294,34.01,71.58,pulses and nuts,Beans(mash),326,KG,actual,Retail,PKR,469,1.69
+2026-10-15,KHYBER PAKHTUNKHWA,Peshawar,Peshawar,294,34.01,71.58,pulses and nuts,Lentils (gram),1378,KG,actual,Retail,PKR,347,1.25
+2026-10-15,KHYBER PAKHTUNKHWA,Peshawar,Peshawar,294,34.01,71.58,pulses and nuts,Lentils (masur),61,KG,actual,Retail,PKR,265,0.96
+2026-10-15,KHYBER PAKHTUNKHWA,Peshawar,Peshawar,294,34.01,71.58,pulses and nuts,Lentils (moong),325,KG,actual,Retail,PKR,340,1.23
+2026-10-15,PUNJAB,Lahore,Lahore,291,31.55,74.34,cereals and tubers,"Rice (basmati, broken)",122,KG,actual,Retail,PKR,228,0.82
+2026-10-15,PUNJAB,Lahore,Lahore,291,31.55,74.34,cereals and tubers,Rice (coarse),60,KG,actual,Retail,PKR,154,0.56
+2026-10-15,PUNJAB,Lahore,Lahore,291,31.55,74.34,cereals and tubers,Wheat,84,KG,actual,Retail,PKR,130,0.47
+2026-10-15,PUNJAB,Lahore,Lahore,291,31.55,74.34,cereals and tubers,Wheat flour,58,KG,actual,Retail,PKR,116,0.42
+2026-10-15,PUNJAB,Lahore,Lahore,291,31.55,74.34,"meat, fish and eggs",Eggs,92,Dozen,actual,Retail,PKR,259,0.94
+2026-10-15,PUNJAB,Lahore,Lahore,291,31.55,74.34,"meat, fish and eggs",Poultry,138,KG,actual,Retail,PKR,363,1.31
+2026-10-15,PUNJAB,Lahore,Lahore,291,31.55,74.34,milk and dairy,Milk,81,L,actual,Retail,PKR,213,0.77
+2026-10-15,PUNJAB,Lahore,Lahore,291,31.55,74.34,miscellaneous food,Sugar,97,KG,actual,Retail,PKR,147,0.53
+2026-10-15,PUNJAB,Lahore,Lahore,291,31.55,74.34,non-food,Fuel (diesel),284,L,actual,Retail,PKR,396,1.43
+2026-10-15,PUNJAB,Lahore,Lahore,291,31.55,74.34,non-food,Fuel (petrol-gasoline),285,L,actual,Retail,PKR,387,1.4
+2026-10-15,PUNJAB,Lahore,Lahore,291,31.55,74.34,non-food,"Wage (non-qualified labour, non-agricultural)",465,Day,actual,Retail,PKR,1747,6.31
+2026-10-15,PUNJAB,Lahore,Lahore,291,31.55,74.34,oil and fats,Ghee (artificial),106,KG,actual,Retail,PKR,632,2.28
+2026-10-15,PUNJAB,Lahore,Lahore,291,31.55,74.34,oil and fats,Oil (cooking),82,L,actual,Retail,PKR,618,2.23
+2026-10-15,PUNJAB,Lahore,Lahore,291,31.55,74.34,pulses and nuts,Beans(mash),326,KG,actual,Retail,PKR,481,1.74
+2026-10-15,PUNJAB,Lahore,Lahore,291,31.55,74.34,pulses and nuts,Lentils (gram),1378,KG,actual,Retail,PKR,257,0.93
+2026-10-15,PUNJAB,Lahore,Lahore,291,31.55,74.34,pulses and nuts,Lentils (masur),61,KG,actual,Retail,PKR,245,0.89
+2026-10-15,PUNJAB,Lahore,Lahore,291,31.55,74.34,pulses and nuts,Lentils (moong),325,KG,actual,Retail,PKR,329,1.19
+2026-10-15,PUNJAB,Multan,Multan,292,30.2,71.48,cereals and tubers,"Rice (basmati, broken)",122,KG,actual,Retail,PKR,193,0.7
+2026-10-15,PUNJAB,Multan,Multan,292,30.2,71.48,cereals and tubers,Rice (coarse),60,KG,actual,Retail,PKR,141,0.51
+2026-10-15,PUNJAB,Multan,Multan,292,30.2,71.48,cereals and tubers,Wheat,84,KG,actual,Retail,PKR,127,0.46
+2026-10-15,PUNJAB,Multan,Multan,292,30.2,71.48,cereals and tubers,Wheat flour,58,KG,actual,Retail,PKR,120,0.43
+2026-10-15,PUNJAB,Multan,Multan,292,30.2,71.48,"meat, fish and eggs",Eggs,92,Dozen,actual,Retail,PKR,253,0.91
+2026-10-15,PUNJAB,Multan,Multan,292,30.2,71.48,"meat, fish and eggs",Poultry,138,KG,actual,Retail,PKR,393,1.42
+2026-10-15,PUNJAB,Multan,Multan,292,30.2,71.48,milk and dairy,Milk,81,L,actual,Retail,PKR,210,0.76
+2026-10-15,PUNJAB,Multan,Multan,292,30.2,71.48,miscellaneous food,Sugar,97,KG,actual,Retail,PKR,140,0.51
+2026-10-15,PUNJAB,Multan,Multan,292,30.2,71.48,non-food,Fuel (diesel),284,L,actual,Retail,PKR,398,1.44
+2026-10-15,PUNJAB,Multan,Multan,292,30.2,71.48,non-food,Fuel (petrol-gasoline),285,L,actual,Retail,PKR,389,1.41
+2026-10-15,PUNJAB,Multan,Multan,292,30.2,71.48,non-food,"Wage (non-qualified labour, non-agricultural)",465,Day,actual,Retail,PKR,1032,3.73
+2026-10-15,PUNJAB,Multan,Multan,292,30.2,71.48,oil and fats,Ghee (artificial),106,KG,actual,Retail,PKR,632,2.28
+2026-10-15,PUNJAB,Multan,Multan,292,30.2,71.48,oil and fats,Oil (cooking),82,L,actual,Retail,PKR,618,2.23
+2026-10-15,PUNJAB,Multan,Multan,292,30.2,71.48,pulses and nuts,Beans(mash),326,KG,actual,Retail,PKR,497,1.8
+2026-10-15,PUNJAB,Multan,Multan,292,30.2,71.48,pulses and nuts,Lentils (gram),1378,KG,actual,Retail,PKR,302,1.09
+2026-10-15,PUNJAB,Multan,Multan,292,30.2,71.48,pulses and nuts,Lentils (masur),61,KG,actual,Retail,PKR,296,1.07
+2026-10-15,PUNJAB,Multan,Multan,292,30.2,71.48,pulses and nuts,Lentils (moong),325,KG,actual,Retail,PKR,391,1.41
+2026-10-15,SINDH,Karachi,Karachi,293,24.91,67.08,cereals and tubers,"Rice (basmati, broken)",122,KG,actual,Retail,PKR,284,1.03
+2026-10-15,SINDH,Karachi,Karachi,293,24.91,67.08,cereals and tubers,Rice (coarse),60,KG,actual,Retail,PKR,175,0.63
+2026-10-15,SINDH,Karachi,Karachi,293,24.91,67.08,cereals and tubers,Wheat,84,KG,actual,Retail,PKR,136,0.49
+2026-10-15,SINDH,Karachi,Karachi,293,24.91,67.08,cereals and tubers,Wheat flour,58,KG,actual,Retail,PKR,165,0.6
+2026-10-15,SINDH,Karachi,Karachi,293,24.91,67.08,"meat, fish and eggs",Eggs,92,Dozen,actual,Retail,PKR,270,0.98
+2026-10-15,SINDH,Karachi,Karachi,293,24.91,67.08,"meat, fish and eggs",Poultry,138,KG,actual,Retail,PKR,438,1.58
+2026-10-15,SINDH,Karachi,Karachi,293,24.91,67.08,milk and dairy,Milk,81,L,actual,Retail,PKR,240,0.87
+2026-10-15,SINDH,Karachi,Karachi,293,24.91,67.08,miscellaneous food,Sugar,97,KG,actual,Retail,PKR,144,0.52
+2026-10-15,SINDH,Karachi,Karachi,293,24.91,67.08,non-food,Fuel (diesel),284,L,actual,Retail,PKR,398,1.44
+2026-10-15,SINDH,Karachi,Karachi,293,24.91,67.08,non-food,Fuel (petrol-gasoline),285,L,actual,Retail,PKR,388,1.4
+2026-10-15,SINDH,Karachi,Karachi,293,24.91,67.08,non-food,"Wage (non-qualified labour, non-agricultural)",465,Day,actual,Retail,PKR,1478,5.34
+2026-10-15,SINDH,Karachi,Karachi,293,24.91,67.08,oil and fats,Ghee (artificial),106,KG,actual,Retail,PKR,632,2.28
+2026-10-15,SINDH,Karachi,Karachi,293,24.91,67.08,oil and fats,Oil (cooking),82,L,actual,Retail,PKR,618,2.23
+2026-10-15,SINDH,Karachi,Karachi,293,24.91,67.08,pulses and nuts,Beans(mash),326,KG,actual,Retail,PKR,460,1.66
+2026-10-15,SINDH,Karachi,Karachi,293,24.91,67.08,pulses and nuts,Lentils (gram),1378,KG,actual,Retail,PKR,298,1.08
+2026-10-15,SINDH,Karachi,Karachi,293,24.91,67.08,pulses and nuts,Lentils (masur),61,KG,actual,Retail,PKR,275,0.99
+2026-10-15,SINDH,Karachi,Karachi,293,24.91,67.08,pulses and nuts,Lentils (moong),325,KG,actual,Retail,PKR,353,1.28
